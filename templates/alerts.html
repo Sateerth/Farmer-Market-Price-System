@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}SMS Alerts{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-title">SMS Alert Log</div>
+  <div class="page-subtitle">Complete history of Krishi Vani price notifications sent to farmers</div>
+</div>
+
+{% if logs %}
+<!-- Summary bar -->
+<div class="row g-3 mb-3">
+  {% set sent_count    = logs | selectattr('status','equalto','sent')    | list | length %}
+  {% set skipped_count = logs | selectattr('status','equalto','skipped') | list | length %}
+  {% set failed_count  = logs | selectattr('status','equalto','failed')  | list | length %}
+  <div class="col-auto">
+    <div class="stat-card" style="padding:0.85rem 1.25rem;">
+      <div class="stat-label">Total</div>
+      <div class="stat-value" style="font-size:1.5rem;">{{ logs | length }}</div>
+    </div>
+  </div>
+  <div class="col-auto">
+    <div class="stat-card" style="padding:0.85rem 1.25rem;">
+      <div class="stat-label">Sent</div>
+      <div class="stat-value" style="font-size:1.5rem;color:var(--green);">{{ sent_count }}</div>
+    </div>
+  </div>
+  <div class="col-auto">
+    <div class="stat-card" style="padding:0.85rem 1.25rem;">
+      <div class="stat-label">Skipped</div>
+      <div class="stat-value" style="font-size:1.5rem;color:#92400e;">{{ skipped_count }}</div>
+    </div>
+  </div>
+  <div class="col-auto">
+    <div class="stat-card" style="padding:0.85rem 1.25rem;">
+      <div class="stat-label">Failed</div>
+      <div class="stat-value" style="font-size:1.5rem;color:#dc2626;">{{ failed_count }}</div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="kv-card">
+  <div class="kv-card-header">
+    <h5>Alert History</h5>
+    <span style="font-size:0.78rem;color:var(--muted);">Last 100 records</span>
+  </div>
+  <div class="table-responsive">
+    <table class="price-table">
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Farmer</th>
+          <th>Phone</th>
+          <th>Commodity</th>
+          <th>Message</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in logs %}
+        <tr>
+          <td style="font-size:0.78rem;color:var(--muted);white-space:nowrap;">{{ log.sent_at[:16] }}</td>
+          <td style="font-weight:600;">{{ log.farmer_name or '—' }}</td>
+          <td style="font-size:0.82rem;">{{ log.phone }}</td>
+          <td><span class="commodity-pill">{{ log.commodity }}</span></td>
+          <td style="font-size:0.8rem;color:var(--muted);max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ log.message }}</td>
+          <td><span class="badge-{{ log.status }}">{{ log.status }}</span></td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" style="text-align:center;padding:3rem;color:var(--muted);">
+            <i class="bi bi-bell-slash d-block fs-2 mb-2"></i>
+            No alerts sent yet.<br>
+            <small>Use <strong>Sync &amp; Alert Now</strong> on the dashboard to trigger alerts.</small>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="info-box mt-3">
+  <i class="bi bi-info-circle-fill me-2"></i>
+  To enable real SMS delivery, add your <strong>Twilio credentials</strong> to <code>.env</code>:
+  <code>TWILIO_ACCOUNT_SID</code>, <code>TWILIO_AUTH_TOKEN</code>, <code>TWILIO_PHONE_NUMBER</code>.
+  Without them, alerts are logged as <strong>skipped</strong> (no SMS sent, but still recorded here).
+</div>
+{% endblock %}

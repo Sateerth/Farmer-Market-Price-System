@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">🧪 SMS Debugging Tool</h4>
+                </div>
+                <div class="card-body">
+                    <p class="alert alert-info">
+                        Use this tool to test SMS sending and debug any issues. Check the console logs for detailed information.
+                    </p>
+                    
+                    <form method="POST" class="mb-4">
+                        <div class="form-group">
+                            <label for="phone"><strong>Phone Number</strong> <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="phone" name="phone" 
+                                   placeholder="+91 or 10-digit number" required>
+                            <small class="form-text text-muted">
+                                Can be +919876543210, 9876543210, or 09876543210
+                            </small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="message"><strong>Test Message</strong></label>
+                            <textarea class="form-control" id="message" name="message" rows="3"
+                                      placeholder="Your test message here">Test message from KrishiVani - SMS Debugging Tool</textarea>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-success btn-lg">Send Test SMS</button>
+                    </form>
+
+                    {% if farmers %}
+                    <hr>
+                    <h5>Quick Send to Registered Farmers:</h5>
+                    <div class="list-group">
+                        {% for farmer in farmers %}
+                        <form method="POST" class="list-group-item list-group-item-action" style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong>{{ farmer.name }}</strong> <br>
+                                <small class="text-muted">{{ farmer.phone }}</small>
+                            </div>
+                            <input type="hidden" name="phone" value="{{ farmer.phone }}">
+                            <input type="hidden" name="message" value="Quick test SMS to {{ farmer.name }} from KrishiVani">
+                            <button type="submit" class="btn btn-sm btn-outline-primary">Send Test</button>
+                        </form>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <hr>
+                    <h5>📋 What to check in console logs:</h5>
+                    <ul>
+                        <li><strong>[SMS ATTEMPT]</strong> - Connection attempt to Twilio</li>
+                        <li><strong>[SMS SUCCESS]</strong> - Message was sent with SID</li>
+                        <li><strong>[SMS ERROR]</strong> - Error details</li>
+                        <li><strong>[SMS SKIPPED]</strong> - Credentials not configured</li>
+                    </ul>
+
+                    <div class="alert alert-warning mt-4">
+                        <strong>Troubleshooting Tips:</strong>
+                        <ul class="mb-0">
+                            <li>Check your Twilio credentials in .env file</li>
+                            <li>Ensure Twilio account has sufficient balance</li>
+                            <li>Indian numbers (+91) work with international Twilio accounts</li>
+                            <li>Check browser console (F12) and Flask terminal for detailed logs</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

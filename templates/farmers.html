@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Registered Farmers{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-start">
+  <div>
+    <div class="page-title">Registered Farmers</div>
+    <div class="page-subtitle">All farmers enrolled in the Krishi Vani alert system ({{ farmers | length }} total)</div>
+  </div>
+  <a href="/register" class="btn-kv btn-kv-primary">
+    <i class="bi bi-person-plus-fill"></i> Register New Farmer
+  </a>
+</div>
+
+{% if farmers %}
+<div class="row g-3">
+  {% for farmer in farmers %}
+  <div class="col-md-6 col-xl-4">
+    <div class="farmer-card">
+      <div class="farmer-card-top">
+        <div class="farmer-avatar">{{ farmer.name[0] | upper }}</div>
+        <div style="min-width:0;">
+          <div class="farmer-name">{{ farmer.name }}</div>
+          <div class="farmer-phone"><i class="bi bi-telephone-fill me-1"></i>{{ farmer.phone }}</div>
+        </div>
+      </div>
+      <div class="farmer-card-body">
+        <div class="farmer-detail">
+          <i class="bi bi-geo-alt-fill" style="color:var(--teal);"></i>
+          {{ farmer.village or 'Village not specified' }}, {{ farmer.state }}
+        </div>
+        <div class="farmer-detail">
+          <i class="bi bi-shop" style="color:var(--teal);"></i>
+          {{ farmer.nearest_market or 'Market not specified' }}
+        </div>
+        <div class="farmer-detail">
+          <i class="bi bi-calendar2" style="color:var(--teal);"></i>
+          Joined {{ farmer.created_at[:10] }}
+        </div>
+
+        {% if farmer.crops %}
+        <div style="margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--border);">
+          <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);margin-bottom:0.4rem;">Monitored Crops</div>
+          <div>
+            {% for crop in farmer.crops %}
+              <span class="crop-tag">{{ crop }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        {% else %}
+        <div style="font-size:0.8rem;color:var(--muted);margin-top:0.5rem;">No crops tracked yet.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="kv-card" style="text-align:center;padding:4rem 2rem;color:var(--muted);">
+  <i class="bi bi-people display-4 d-block mb-3"></i>
+  <h5>No Farmers Registered Yet</h5>
+  <p style="font-size:0.9rem;">Register your first farmer to start receiving automated price alerts.</p>
+  <a href="/register" class="btn-kv btn-kv-primary" style="display:inline-flex;">Register First Farmer</a>
+</div>
+{% endif %}
+{% endblock %}

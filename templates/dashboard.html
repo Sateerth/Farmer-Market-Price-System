@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-title">Command Center</div>
+  <div class="page-subtitle">Real-time intelligence for Karnataka agricultural markets</div>
+</div>
+
+<!-- ── Stat Cards ── -->
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-label">Total Farmers</div>
+    <i class="bi bi-people-fill stat-icon"></i>
+    <div class="stat-value">{{ total_farmers }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Commodities</div>
+    <i class="bi bi-box-seam stat-icon"></i>
+    <div class="stat-value">{{ total_commodities }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Districts</div>
+    <i class="bi bi-map stat-icon"></i>
+    <div class="stat-value">{{ total_districts }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Markets</div>
+    <i class="bi bi-shop stat-icon"></i>
+    <div class="stat-value">{{ total_markets }}</div>
+  </div>
+  <div class="stat-card orange">
+    <div class="stat-label">Alerts Today</div>
+    <i class="bi bi-bell-fill stat-icon"></i>
+    <div class="stat-value">{{ alerts_today }}</div>
+  </div>
+</div>
+
+<!-- ── Main Grid ── -->
+<div class="row g-3">
+
+  <!-- Market Movement -->
+  <div class="col-lg-8">
+    <div class="kv-card">
+      <div class="kv-card-header">
+        <div>
+          <h5>Market Movement</h5>
+          <div class="sub">Top commodities over the last 15 days</div>
+        </div>
+        <a href="/prices" class="btn-kv btn-kv-outline" style="font-size:0.78rem;padding:0.35rem 0.85rem;">
+          View All <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+      {% for t in trends %}
+      <div class="trend-row">
+        <div class="trend-icon-wrap {{ t.trend }}">
+          {% if t.trend == 'rising' %}↗{% elif t.trend == 'falling' %}↘{% else %}—{% endif %}
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div class="trend-name">{{ t.commodity }}</div>
+          <div class="trend-meta">
+            ₹{{ t.latest_price | int }}/q
+            <span class="trend-change {% if t.change > 0 %}up{% elif t.change < 0 %}down{% else %}flat{% endif %}">
+              {{ '+' if t.change > 0 else '' }}{{ t.change }} ({{ t.change_pct }}%)
+            </span>
+          </div>
+        </div>
+        <span class="badge-{{ t.trend }}">{{ t.trend | capitalize }}</span>
+        <canvas class="mini-chart" id="spark-{{ loop.index }}"></canvas>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Right Column -->
+  <div class="col-lg-4 d-flex flex-column gap-3">
+
+    <!-- Recent Alerts -->
+    <div class="kv-card">
+      <div class="kv-card-header">
+        <div><h5>Recent Alerts</h5></div>
+        <a href="/alerts" style="font-size:0.78rem;color:var(--teal);text-decoration:none;font-weight:600;">View Log →</a>
+      </div>
+      <div style="padding:0.75rem 1.25rem;">
+        {% if recent_alerts %}
+          {% for a in recent_alerts %}
+          <div class="d-flex align-items-center gap-2 py-2 border-bottom">
+            <span class="badge-{{ a.status }}">{{ a.status }}</span>
+            <div style="font-size:0.82rem;min-width:0;">
+              <div class="fw-bold" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ a.commodity }}</div>
+              <div class="text-muted" style="font-size:0.75rem;">{{ a.phone }}</div>
+            </div>
+            <div class="ms-auto text-muted" style="font-size:0.72rem;white-space:nowrap;">{{ a.sent_at[11:16] }}</div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="text-center py-4 text-muted" style="font-size:0.85rem;">
+            <i class="bi bi-bell-slash d-block mb-2 fs-4"></i>No alerts sent recently.
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- System Status -->
+    <div class="kv-card">
+      <div class="kv-card-header"><h5>System Status</h5></div>
+      <div style="padding:0.75rem 1.25rem;">
+        <div class="status-row">
+          <span class="text-muted">Agmarknet Sync</span>
+          <span style="font-size:0.82rem;">{{ agmarknet_sync[:16] if agmarknet_sync != 'Never' else 'Never' }}</span>
+        </div>
+        <div class="status-row">
+          <span class="text-muted">API Health</span>
+          <span class="status-live"><i class="bi bi-circle-fill" style="font-size:0.5rem;"></i>Operational</span>
+        </div>
+        <div class="status-row">
+          <span class="text-muted">Data Source</span>
+          <span style="font-size:0.82rem;">Agmarknet / Mock</span>
+        </div>
+        <div style="margin-top:1rem;">
+          <form method="POST" action="/prices/sync">
+            <button type="submit" class="btn-kv btn-kv-orange w-100">
+              <i class="bi bi-arrow-clockwise"></i> Sync &amp; Alert Now
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const trends = {{ trends_json | safe }};
+trends.forEach((t, i) => {
+  const canvas = document.getElementById("spark-" + (i + 1));
+  if (!canvas || !t.sparkline.length) return;
+  const color = t.trend === 'rising' ? '#2da653' : t.trend === 'falling' ? '#dc2626' : '#9ca3af';
+  new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels: t.sparkline.map((_, j) => j),
+      datasets: [{ data: t.sparkline, borderColor: color, borderWidth: 2.5, pointRadius: 0, tension: 0.4,
+        fill: true, backgroundColor: color + '18' }]
+    },
+    options: {
+      responsive: false, animation: false,
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      scales: { x: { display: false }, y: { display: false } }
+    }
+  });
+});
+</script>
+{% endblock %}

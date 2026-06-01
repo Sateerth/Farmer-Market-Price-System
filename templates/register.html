@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Register Farmer{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-title">Onboard Farmer</div>
+  <div class="page-subtitle">Register a new farmer to receive automatic Krishi Vani price alerts</div>
+</div>
+
+<div class="form-card">
+  <div class="form-card-header">
+    <h5><i class="bi bi-person-plus-fill me-2"></i>Farmer Profile</h5>
+    <p>Enter details to enable automated price tracking &amp; SMS notifications</p>
+  </div>
+  <div class="form-card-body">
+    <form method="POST" action="/register">
+      <div class="row g-3 mb-4">
+        <div class="col-md-6">
+          <label class="form-label-kv">Full Name</label>
+          <input type="text" name="name" class="form-input-kv" placeholder="e.g. Ramesh Gowda" required/>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label-kv">Mobile Number</label>
+          <input type="text" name="phone" class="form-input-kv" placeholder="10-digit number (e.g. 9845012345)" required/>
+          <div style="font-size:0.75rem;color:var(--muted);margin-top:5px;"><i class="bi bi-info-circle me-1"></i>SMS price alerts will be sent to this number</div>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label-kv">Village / Farm Name</label>
+          <input type="text" name="village" class="form-input-kv" placeholder="e.g. Kolar Farms"/>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label-kv">Nearest APMC Market</label>
+          <input type="text" name="market" class="form-input-kv" placeholder="e.g. Kolar APMC"/>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label-kv"><i class="bi bi-flower1 me-1"></i>Crops to Monitor</label>
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.75rem;">
+          Select all crops this farmer grows — alerts will be sent for price changes in these commodities.
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+          {% for crop in crops %}
+          <label class="crop-chip" id="chip-{{ crop }}">
+            <input type="checkbox" name="crops" value="{{ crop }}" class="d-none"/>
+            {{ crop }}
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="d-flex align-items-center gap-3">
+        <button type="submit" class="btn-kv btn-kv-primary" style="padding:0.7rem 2rem;">
+          <i class="bi bi-check-circle-fill me-1"></i>Complete Registration
+        </button>
+        <a href="/farmers" class="btn-kv btn-kv-outline">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

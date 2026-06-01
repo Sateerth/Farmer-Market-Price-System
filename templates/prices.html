@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Live Prices{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-start">
+  <div>
+    <div class="page-title">Live Market Prices</div>
+    <div class="page-subtitle">Monitor real-time mandi prices across Karnataka</div>
+  </div>
+  <form method="POST" action="/prices/sync">
+    <button type="submit" class="btn-kv btn-kv-orange">
+      <i class="bi bi-arrow-clockwise"></i> Sync Latest Data
+    </button>
+  </form>
+</div>
+
+<div class="filter-bar">
+  <form method="GET" action="/prices" class="d-flex flex-wrap align-items-end gap-3 w-100">
+    <div>
+      <label>Commodity</label>
+      <select name="commodity">
+        <option value="">All Commodities</option>
+        {% for c in commodities %}
+          <option value="{{ c }}" {% if c == selected_commodity %}selected{% endif %}>{{ c }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label>District</label>
+      <select name="district">
+        <option value="">All Districts</option>
+        {% for d in districts %}
+          <option value="{{ d }}" {% if d == selected_district %}selected{% endif %}>{{ d }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label>Market</label>
+      <select name="market">
+        <option value="">All Markets</option>
+        {% for m in markets %}
+          <option value="{{ m }}" {% if m == selected_market %}selected{% endif %}>{{ m }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn-kv btn-kv-teal">
+      <i class="bi bi-funnel"></i> Apply Filters
+    </button>
+    <a href="/prices" class="btn-kv btn-kv-outline">Clear</a>
+    <div class="ms-auto text-muted" style="font-size:0.78rem;align-self:center;">
+      Showing {{ rows | length }} records
+    </div>
+  </form>
+</div>
+
+<div class="kv-card">
+  <div class="table-responsive">
+    <table class="price-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Commodity</th>
+          <th>District</th>
+          <th>Market</th>
+          <th style="text-align:right;">Min Price</th>
+          <th style="text-align:right;">Max Price</th>
+          <th style="text-align:right;">Modal Price</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td style="color:var(--muted);font-size:0.82rem;">{{ r.date }}</td>
+          <td><span class="commodity-pill">{{ r.commodity }}</span></td>
+          <td>{{ r.district }}</td>
+          <td>{{ r.market }}</td>
+          <td style="text-align:right;">₹{{ r.min_price | int }}</td>
+          <td style="text-align:right;">₹{{ r.max_price | int }}</td>
+          <td style="text-align:right;" class="modal-price">₹{{ r.modal_price | int }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" style="text-align:center;padding:3rem;color:var(--muted);">
+            <i class="bi bi-inbox d-block fs-2 mb-2"></i>No price data found.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

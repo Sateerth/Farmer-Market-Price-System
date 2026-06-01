@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block title %}AI Prediction{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-title">AI Price Predictions</div>
+  <div class="page-subtitle">Forecast commodity prices using scikit-learn linear regression on historical mandi data</div>
+</div>
+
+<div class="row g-3">
+
+  <!-- Left panel -->
+  <div class="col-lg-4 d-flex flex-column gap-3">
+
+    <!-- Commodity select -->
+    <div class="predict-panel">
+      <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);margin-bottom:0.6rem;">Select Commodity</div>
+      <form method="GET" action="/predict">
+        <select name="commodity" class="form-select" style="border-radius:9px;border:1.5px solid var(--border);font-size:0.9rem;" onchange="this.form.submit()">
+          {% for c in commodities %}
+            <option value="{{ c }}" {% if c == selected %}selected{% endif %}>{{ c }}</option>
+          {% endfor %}
+        </select>
+      </form>
+    </div>
+
+    {% if prediction and not prediction.get('error') %}
+    <!-- Forecast panel -->
+    <div class="predict-panel">
+      <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);margin-bottom:0.6rem;">7-Day Forecast</div>
+      <div class="d-flex align-items-baseline gap-3 mb-3">
+        <div class="predict-price">₹{{ prediction.predicted_price | int }}<span>/q</span></div>
+        <span class="badge-{{ prediction.trend }}">{{ prediction.trend | capitalize }}</span>
+      </div>
+
+      <div class="d-flex justify-content-between mb-1" style="font-size:0.8rem;">
+        <span class="text-muted">Model Confidence</span>
+        <span style="font-weight:700;color:var(--teal);">{{ prediction.confidence }}%</span>
+      </div>
+      <div class="confidence-bar mb-3">
+        <div class="confidence-fill" style="width:{{ prediction.confidence }}%"></div>
+      </div>
+
+      <div class="recommend-box">
+        <div class="title"><i class="bi bi-lightbulb-fill me-1"></i>Recommendation</div>
+        <div style="font-size:0.85rem;color:var(--text);">{{ prediction.suggestion }}</div>
+      </div>
+
+      <div class="mt-3 p-3 rounded" style="background:#f0f4f8;font-size:0.78rem;">
+        <div class="d-flex justify-content-between mb-1">
+          <span class="text-muted">Price Slope</span>
+          <span class="fw-bold {% if prediction.slope > 0 %}up{% elif prediction.slope < 0 %}down{% endif %}">
+            {{ '+' if prediction.slope > 0 else '' }}{{ prediction.slope }}/day
+          </span>
+        </div>
+        <div class="d-flex justify-content-between">
+          <span class="text-muted">Algorithm</span>
+          <span class="fw-bold">Linear Regression</span>
+        </div>
+      </div>
+    </div>
+
+    {% elif prediction and prediction.get('error') %}
+    <div class="alert alert-warning" style="font-size:0.85rem;">
+      <i class="bi bi-exclamation-triangle me-1"></i>{{ prediction.error }}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Chart -->
+  <div class="col-lg-8">
+    <div class="kv-card h-100">
+      <div class="kv-card-header">
+        <div>
+          <h5>Price Trend Analysis: {{ selected }}</h5>
+          <div class="sub">Historical prices vs AI forecast model (scikit-learn)</div>
+        </div>
+      </div>
+      <div style="padding:1.5rem;height:400px;">
+        <canvas id="predChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const predData = {{ prediction_json | safe }};
+if (predData && !predData.error) {
+  const histLabels = predData.historical.map(d => d.date);
+  const histPrices = predData.historical.map(d => d.price);
+  const foreLabels = predData.forecast.map(d => d.date);
+  const forePrices = predData.forecast.map(d => d.price);
+
+  const allLabels = [...histLabels, ...foreLabels];
+  const histFull  = [...histPrices, ...Array(foreLabels.length).fill(null)];
+  const foreFull  = [...Array(histLabels.length - 1).fill(null), histPrices[histPrices.length - 1], ...forePrices];
+
+  new Chart(document.getElementById("predChart"), {
+    type: "line",
+    data: {
+      labels: allLabels,
+      datasets: [
+        {
+          label: "Historical Price (₹/quintal)",
+          data: histFull,
+          borderColor: "#0d2137",
+          backgroundColor: "rgba(13,33,55,0.07)",
+          borderWidth: 2.5,
+          pointRadius: 3,
+          pointBackgroundColor: "#0d2137",
+          tension: 0.4,
+          fill: true,
+        },
+        {
+          label: "AI Forecast",
+          data: foreFull,
+          borderColor: "#f5821f",
+          borderDash: [7, 4],
+          borderWidth: 2.5,
+          pointRadius: 3,
+          pointBackgroundColor: "#f5821f",
+          tension: 0.4,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: "index", intersect: false },
+      plugins: {
+        legend: { position: "bottom", labels: { usePointStyle: true, padding: 20, font: { size: 12 } } },
+        tooltip: { callbacks: { label: ctx => " ₹" + ctx.parsed.y?.toFixed(0) + "/q" } }
+      },
+      scales: {
+        x: { grid: { color: "#f0f4f8" }, ticks: { font: { size: 11 }, color: "#6b7c93" } },
+        y: {
+          grid: { color: "#f0f4f8" },
+          ticks: { font: { size: 11 }, color: "#6b7c93", callback: v => "₹" + v }
+        }
+      }
+    }
+  });
+}
+</script>
+{% endblock %}
